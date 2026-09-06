@@ -1,0 +1,44 @@
+# Run with `prek`, not the Python `pre-commit`:
+#   prek install && prek run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # This repository is Terraform-adjacent, so checkov guards the IaC in it -
+  # today the workflows, and any real Terraform added later. Configuration,
+  # including why the example fixture is excluded, lives in .checkov.yaml.
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: 3.3.16
+    hooks:
+      - id: checkov
+        args: [--directory, .]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]

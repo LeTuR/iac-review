@@ -1,0 +1,27 @@
+# The three data sources this reviewer depends on move on their own schedule.
+# This job is the canary: it refreshes every one of them against the live
+# upstream and fails when the icon map has drifted away from the Azure shape
+# library drawio ships today.
+name: upstream
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run iac-review cache refresh
+      - run: uv run iac-review icons audit
+      - name: Review the example fixture against live upstream data
+        run: uv run iac-review review --path examples/fixture

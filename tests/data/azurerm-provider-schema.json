@@ -1,0 +1,27 @@
+{
+  "format_version": "1.0",
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/azurerm": {
+      "provider": { "version": "4.0.0" },
+      "resource_schemas": {
+        "azurerm_storage_account": {
+          "version": 4,
+          "block": {
+            "attributes": {
+              "id": { "type": "string", "computed": true },
+              "name": { "type": "string", "required": true },
+              "resource_group_name": { "type": "string", "required": true },
+              "location": { "type": "string", "required": true },
+              "account_tier": { "type": "string", "required": true },
+              "min_tls_version": { "type": "string", "optional": true }
+            },
+            "block_types": {
+              "blob_properties": { "nesting_mode": "list", "block": {} },
+              "timeouts": { "nesting_mode": "single", "block": {} }
+            }
+          }
+        }
+      }
+    }
+  }
+}

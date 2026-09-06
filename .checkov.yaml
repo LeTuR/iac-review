@@ -1,0 +1,8 @@
+# examples/fixture is deliberately non-conformant Terraform. It is the input that
+# demonstrates what iac-review flags, not infrastructure this repository deploys,
+# and making it pass checkov would delete the findings it exists to produce.
+skip-path:
+  - examples/fixture
+quiet: true
+compact: true
+skip-download: true
