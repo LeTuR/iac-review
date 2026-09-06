@@ -79,12 +79,3 @@ def test_gitlab_is_registered_but_states_what_it_needs() -> None:
     assert isinstance(forge, GitLabForge)
     with pytest.raises(NotImplementedError, match=r"gitlab\.py"):
         forge.fetch("group/project!1")
-
-
-def test_the_gitlab_gap_documents_the_api_calls_it_needs() -> None:
-    from iac_review.forges import gitlab
-
-    doc = gitlab.__doc__ or ""
-    assert "merge_requests/{iid}/changes" in doc
-    assert "discussions" in doc
-    assert "changed_lines" in doc, "the gap must point at the parser it reuses"

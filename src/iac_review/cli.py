@@ -21,7 +21,7 @@ from typing import Any
 from iac_review import __version__
 from iac_review.core import toon
 from iac_review.core.cache import Cache
-from iac_review.core.model import ReviewResult
+from iac_review.core.model import Finding, ReviewResult
 
 DESCRIPTION = (
     "Review Terraform against Azure Verified Modules and the AzureRM provider "
@@ -372,6 +372,14 @@ def _review(cache: Cache, flags: dict[str, Any]) -> int:
     return EXIT_OK
 
 
+def _location(f: Finding) -> str:
+    if not f.path:
+        return "-"
+    if f.line is None:
+        return f.path
+    return f"{f.path}:{f.line}"
+
+
 def _toon_review(result: ReviewResult, diagram: str | None, *, full: bool) -> str:
     counts = {level: sum(1 for f in result.findings if f.severity == level) for level in _LEVELS}
     breakdown = ", ".join(f"{n} {level}" for level, n in counts.items() if n) or "none"
@@ -397,7 +405,7 @@ def _toon_review(result: ReviewResult, diagram: str | None, *, full: bool) -> st
                 [
                     {
                         "severity": f.severity,
-                        "location": f"{f.path}:{f.line}" if f.path else "-",
+                        "location": _location(f),
                         "rule": f.rule,
                         "title": f.title,
                     }
@@ -414,7 +422,7 @@ def _toon_review(result: ReviewResult, diagram: str | None, *, full: bool) -> st
                     ("location", "detail", "suggestion", "references"),
                     [
                         {
-                            "location": f"{f.path}:{f.line}" if f.path else "-",
+                            "location": _location(f),
                             "detail": f.detail,
                             "suggestion": f.suggestion or "-",
                             "references": " ".join(f.references) or "-",

@@ -159,9 +159,12 @@ when.
 | `terraform providers schema -json` | every resource, argument and requiredness | machine-readable, local, and authoritative for the provider version you pin |
 | [drawio Azure 2 shape library](https://github.com/jgraph/drawio/tree/dev/src/main/webapp/img/lib/azure2) | the icons | drawio resolves these paths itself, so the diagram needs no embedded assets |
 
-Prose documentation is a last resort, used only for semantics no schema carries.
-Cloning the Azure docs repository was considered and rejected: the provider
-schema answers "is this valid" exactly, offline, per provider version.
+The Terraform provider schema and Azure Verified Modules answer validity and
+module conformance precisely, offline and per version, so they come first.
+Official prose documentation remains the source for semantics no schema
+carries — deprecations, constraints, regional availability, guidance about
+what you should do rather than what is merely valid — and when it is needed
+it would be fetched narrowly rather than by cloning the docs repository.
 
 The one source that is not published by Microsoft is `aztft`. It is a
 dependency of Microsoft's own `aztfexport`, it is cached and refreshable like

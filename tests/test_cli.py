@@ -13,7 +13,8 @@ from pathlib import Path
 import pytest
 
 from iac_review import __version__
-from iac_review.cli import EXIT_FAILED, EXIT_OK, EXIT_USAGE, main
+from iac_review.cli import EXIT_FAILED, EXIT_OK, EXIT_USAGE, _toon_review, main
+from iac_review.core.model import Changeset, Finding, ReviewResult
 from tests.conftest import FIXTURE
 
 CACHE = str(Path(__file__).parent / "data" / "cache")
@@ -42,6 +43,16 @@ def test_full_adds_detail_the_list_omits(capsys: pytest.CaptureFixture[str]) -> 
     assert "details[4]{location,detail,suggestion,references}:" in full  # §3
     assert "avm-res-storage-storageaccount/azurerm" in full
     assert "Run the same command with `--full`" in brief  # §9 it is discoverable
+
+
+def test_location_falls_back_to_path_when_line_is_unknown() -> None:
+    result = ReviewResult(
+        changeset=Changeset(ref="local", files=()),
+        findings=(Finding("azure/other", "info", "No line", "d", "main.tf"),),
+    )
+    out = _toon_review(result, None, full=True)
+    assert "main.tf:None" not in out
+    assert "main.tf" in out
 
 
 def test_empty_result_states_the_zero(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
