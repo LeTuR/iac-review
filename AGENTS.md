@@ -27,10 +27,17 @@ This file is the project's committed home for project-intrinsic agent knowledge:
   copy of the upstream data, loaded through `Cache(..., offline=True)` by the
   `cache` fixture in `tests/conftest.py`. Adding a resource type to a test
   usually means adding its entries there too.
-- **`examples/output/platform.drawio` is committed and tested.** After anything
-  that changes diagram output, regenerate it with the command in the failure
-  message of `tests/test_example.py` — it uses the frozen cache so the file stays
-  deterministic.
+- **Both files in `examples/output/` are committed and tested.** After anything
+  that changes diagram output, regenerate `platform.drawio` and
+  `platform.drawio.svg` with the command in the failure message of
+  `tests/test_example.py`. **Always pass `--offline`**: without it the run
+  refreshes `tests/data/cache` in place and replaces the trimmed fixtures with
+  full upstream payloads, which bloats the repository and destroys test
+  determinism. `test_the_frozen_cache_stays_trimmed` catches that.
+- **Both renderers place nodes through `core/layout.py`.** The `.drawio.svg`
+  embeds the `.drawio` XML verbatim in its `content` attribute, so the picture
+  and its source are one artifact; keep them rendering from the same layout or
+  they will drift.
 - **The AVM join is subtle.** A Terraform resource maps to an AVM module only
   when its ARM type path resolves to a single primary type. Leading scope
   segments (`subscriptions/resourceGroups`) are not parents; a real child

@@ -9,6 +9,7 @@ from iac_review.core.cache import Cache
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "examples" / "fixture"
 EXAMPLE = ROOT / "examples" / "output" / "platform.drawio"
+EXAMPLE_SVG = ROOT / "examples" / "output" / "platform.drawio.svg"
 
 
 @pytest.fixture

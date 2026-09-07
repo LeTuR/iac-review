@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
+from dataclasses import replace
 
 from iac_review.core.cache import Cache
 from iac_review.core.model import (
@@ -22,7 +23,7 @@ from iac_review.core.model import (
 )
 from iac_review.providers.azure import avm, schema
 from iac_review.providers.azure.armtypes import ArmType, ArmTypeMap
-from iac_review.providers.azure.icons import IconMap
+from iac_review.providers.azure.icons import DrawioIconSource, IconMap
 from iac_review.providers.azure.terraform import Block, parse
 
 _REFERENCE = re.compile(r"\b(azurerm_[a-z0-9_]+)\.([A-Za-z_][A-Za-z0-9_-]*)")
@@ -31,6 +32,45 @@ _RESOURCE_GROUP = "azurerm_resource_group"
 
 def _node_id(address: str) -> str:
     return "n-" + re.sub(r"[^A-Za-z0-9_-]", "-", address)
+
+
+def _group_of(block: Block, references: set[str]) -> str:
+    """Azure groups by resource group, so the diagram does too.
+
+    A resource group heads its own box; anything referencing one joins it.
+    Everything else falls back to the file it was declared in.
+    """
+    if block.type == _RESOURCE_GROUP:
+        return block.name
+    owner = next((ref for ref in sorted(references) if ref.startswith(f"{_RESOURCE_GROUP}.")), None)
+    return owner.split(".", 1)[1] if owner else block.path
+
+
+def _inherit_groups(nodes: list[Node], resources: list[Block]) -> list[Node]:
+    """Pull a resource into the group of whatever it hangs off.
+
+    A storage container names no resource group - its storage account does. One
+    pass up the reference chain keeps such resources beside their parent instead
+    of stranding them in a file-named box.
+    """
+    settled = {node.id: node.group for node in nodes}
+    by_address = {block.address: block for block in resources}
+    for block in resources:
+        node_id = _node_id(block.address)
+        if settled.get(node_id) != block.path:
+            continue
+        for reference in sorted(_references(block)):
+            parent = by_address.get(reference)
+            if parent is None or parent.address == block.address:
+                continue
+            inherited = settled.get(_node_id(parent.address))
+            if inherited and inherited != parent.path:
+                settled[node_id] = inherited
+                break
+    return [
+        node if node.group == settled[node.id] else replace(node, group=settled[node.id])
+        for node in nodes
+    ]
 
 
 def _references(block: Block) -> set[str]:
@@ -80,6 +120,7 @@ class AzureProvider:
             nodes=tuple(nodes),
             edges=tuple(edges),
             diagnostics=tuple(diagnostics),
+            icons=DrawioIconSource(self._cache),
         )
 
     def _review(
@@ -121,22 +162,20 @@ class AzureProvider:
             if icon is None:
                 unmapped.add(block.type)
             references = _references(block)
-            group = next(
-                (ref for ref in sorted(references) if ref.startswith(f"{_RESOURCE_GROUP}.")),
-                None,
-            )
             nodes.append(
                 Node(
                     id=_node_id(block.address),
                     label=block.name,
                     kind=block.type,
                     icon=icon,
-                    group=group.split(".", 1)[1] if group else block.path,
+                    group=_group_of(block, references),
                 )
             )
             for reference in sorted(references):
                 if reference in known and reference != block.address:
                     edges.append(Edge(_node_id(block.address), _node_id(reference)))
+
+        nodes = _inherit_groups(nodes, resources)
 
         diagnostics = [
             Diagnostic(

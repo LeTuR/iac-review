@@ -6,7 +6,7 @@ import pytest
 
 from iac_review import forges
 from iac_review.core.model import ChangedFile, Changeset, Finding, ReviewResult
-from iac_review.forges.github import GitHubForge, parse_target
+from iac_review.forges.github import GitHubForge, PullRequest, parse_target
 from iac_review.forges.gitlab import GitLabForge
 
 
@@ -79,3 +79,63 @@ def test_gitlab_is_registered_but_states_what_it_needs() -> None:
     assert isinstance(forge, GitLabForge)
     with pytest.raises(NotImplementedError, match=r"gitlab\.py"):
         forge.fetch("group/project!1")
+
+
+def _result_with_diagram(path: str | None) -> ReviewResult:
+    changeset = Changeset(
+        ref="LeTuR/iac-review#7",
+        files=(ChangedFile("main.tf", "modified", changed_lines=frozenset({10})),),
+    )
+    return ReviewResult(changeset=changeset, diagram_path=path)
+
+
+class _WithContents(_Recorder):
+    def __init__(self, committed: set[str]) -> None:
+        super().__init__()
+        self._committed = committed
+        self._head_sha = "abc123"
+
+    def _contents(self, pull: PullRequest, path: str, ref: str) -> str | None:
+        return "<svg/>" if path in self._committed else None
+
+
+def test_a_committed_diagram_is_displayed_inline() -> None:
+    forge = _WithContents({"docs/platform.drawio.svg"})
+    forge.publish(_result_with_diagram("docs/platform.drawio.svg"))
+    payload = forge.calls[-1][2]
+    assert payload is not None
+    body = payload["body"]
+    assert (
+        '<img src="https://raw.githubusercontent.com/LeTuR/iac-review/abc123/'
+        'docs/platform.drawio.svg"' in body
+    )
+    assert "Open [`docs/platform.drawio.svg`]" in body
+
+
+def test_an_uncommitted_diagram_is_named_rather_than_dropped() -> None:
+    forge = _WithContents(committed=set())
+    forge.publish(_result_with_diagram("build/platform.drawio.svg"))
+    payload = forge.calls[-1][2]
+    assert payload is not None
+    body = payload["body"]
+    assert "<img" not in body
+    assert "build/platform.drawio.svg" in body
+    assert "not committed at this commit" in body
+
+
+def test_no_diagram_adds_nothing_to_the_body() -> None:
+    forge = _WithContents(committed=set())
+    forge.publish(_result_with_diagram(None))
+    payload = forge.calls[-1][2]
+    assert payload is not None
+    body = payload["body"]
+    assert "<img" not in body
+    assert "diagram" not in body.lower()
+
+
+def test_the_gitlab_gap_records_how_that_forge_would_show_the_diagram() -> None:
+    from iac_review.forges import gitlab
+
+    doc = gitlab.__doc__ or ""
+    assert "/projects/:id/uploads" in doc
+    assert "diagram_path" in doc

@@ -8,8 +8,13 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
       - id: check-json
+      # tests/data/cache holds byte-exact copies of upstream artifacts. Rewriting
+      # their whitespace would make the fixtures disagree with what the real
+      # sources serve, and changes the diagram the SVG example embeds.
       - id: end-of-file-fixer
+        exclude: ^tests/data/cache/
       - id: trailing-whitespace
+        exclude: ^tests/data/cache/
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.6

@@ -25,7 +25,7 @@ stops being true. It is the reason the claim survives a second forge.
 
 | Layer | Knows about | Does not know about |
 | --- | --- | --- |
-| `core/` | changesets, findings, diagrams, unified diffs, the drawio file format, TOON, HTTP caching | pull requests, merge requests, Azure, Terraform |
+| `core/` | changesets, findings, diagrams, layout, the drawio and SVG formats, unified diffs, TOON, HTTP caching | pull requests, merge requests, Azure, Terraform |
 | `forges/` | pull requests, merge requests, review APIs, tokens | clouds, Terraform, rules |
 | `providers/azure/` | Terraform, ARM types, AVM, the AzureRM schema, Azure icons | pull requests, merge requests |
 
@@ -39,6 +39,10 @@ Two details earn their place in the core rather than in an adapter:
   asks what the node is. An AWS provider would reuse it unchanged.
 - **The TOON encoder** (`core/toon.py`). Same argument: an output format the CLI
   needs, with no knowledge of what is being encoded.
+- **The SVG renderer** (`core/svg.py`) and the layout they share
+  (`core/layout.py`). The renderer asks the provider's
+  :class:`~iac_review.core.model.IconSource` for bytes behind an icon reference;
+  it never learns that the reference names an Azure shape.
 
 ## Adding a forge
 
@@ -62,5 +66,6 @@ Three things are expected to be missing, and none of them stops a review:
 | Missing | Behaviour |
 | --- | --- |
 | an icon for a resource type | labelled generic shape, reported as a diagnostic |
+| the bytes behind an icon, when offline | the SVG draws that node as a generic box |
 | the AzureRM provider schema | schema rules skipped, reported as a diagnostic |
 | the network | cached copies used, marked stale |

@@ -203,3 +203,26 @@ def test_version_answers_before_the_heavy_graph_loads() -> None:
         "sys.exit(1 if loaded else 0)"
     )
     assert subprocess.run([sys.executable, "-c", probe], check=False).returncode == 0
+
+
+def test_svg_extension_writes_a_displayable_editable_artifact(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    import xml.etree.ElementTree as ET
+
+    target = tmp_path / "platform.drawio.svg"
+    code, out = _run(capsys, "review", "--path", str(FIXTURE), "--diagram", str(target))
+    assert code == EXIT_OK
+    root = ET.fromstring(target.read_text())
+    assert root.tag == "{http://www.w3.org/2000/svg}svg"
+    assert ET.fromstring(root.get("content") or "").tag == "mxfile"
+    assert f"path: {target}" in out
+
+
+def test_drawio_extension_still_writes_plain_xml(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    target = tmp_path / "platform.drawio"
+    _run(capsys, "review", "--path", str(FIXTURE), "--diagram", str(target))
+    assert target.read_text().lstrip().startswith("<?xml")
+    assert "<mxfile" in target.read_text()

@@ -2,15 +2,16 @@
 
 This module knows the drawio file format and nothing else. Which icon a node
 gets is decided by the provider that produced the node, so an AWS provider would
-reuse this renderer unchanged.
+reuse this renderer unchanged. Positions come from
+:mod:`iac_review.core.layout`, shared with the SVG renderer.
 """
 
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from collections import OrderedDict
 from xml.dom import minidom
 
+from iac_review.core.layout import Box, Layout, place
 from iac_review.core.model import Diagram, Node
 
 ICON_STYLE = (
@@ -28,19 +29,15 @@ GROUP_STYLE = (
 )
 EDGE_STYLE = "edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;"
 
-_ICON_W, _ICON_H = 68, 68
-_CELL_W, _CELL_H = 150, 110
-_COLS = 4
-_PAD_X, _PAD_TOP, _PAD_BOTTOM = 24, 40, 16
 
-
-def _label(node: Node) -> str:
+def label(node: Node) -> str:
     """drawio renders cell values as HTML when the style sets ``html=1``."""
     return f"{node.label}<br>{node.kind}" if node.kind else node.label
 
 
-def render(diagram: Diagram) -> str:
+def render(diagram: Diagram, layout: Layout | None = None) -> str:
     """Return the diagram as pretty-printed, uncompressed drawio XML."""
+    placed = layout or place(diagram)
     mxfile = ET.Element("mxfile", {"host": "iac-review", "agent": "iac-review", "type": "device"})
     page = ET.SubElement(mxfile, "diagram", {"id": "iac-review", "name": diagram.title})
     model = ET.SubElement(
@@ -68,31 +65,13 @@ def render(diagram: Diagram) -> str:
     ET.SubElement(root, "mxCell", {"id": "0"})
     ET.SubElement(root, "mxCell", {"id": "1", "parent": "0"})
 
-    groups: OrderedDict[str, list[Node]] = OrderedDict()
-    for node in diagram.nodes:
-        groups.setdefault(node.group or diagram.title, []).append(node)
-
-    y = 40
-    for index, (name, members) in enumerate(groups.items()):
-        rows = (len(members) + _COLS - 1) // _COLS
-        height = _PAD_TOP + rows * _CELL_H + _PAD_BOTTOM
-        width = _PAD_X * 2 + min(len(members), _COLS) * _CELL_W
-        group_id = f"group-{index}"
-        _vertex(root, group_id, name, GROUP_STYLE, 40, y, width, height, parent="1")
-        for position, node in enumerate(members):
-            col, row = position % _COLS, position // _COLS
+    for group in placed.groups:
+        _vertex(root, group.id, group.label, GROUP_STYLE, group.box, parent="1")
+        for node in (n for n in placed.nodes if n.group_id == group.id):
+            style = ICON_STYLE.format(icon=node.node.icon) if node.node.icon else UNMAPPED_STYLE
             _vertex(
-                root,
-                node.id,
-                _label(node),
-                ICON_STYLE.format(icon=node.icon) if node.icon else UNMAPPED_STYLE,
-                _PAD_X + col * _CELL_W + (_CELL_W - _ICON_W) // 2,
-                _PAD_TOP + row * _CELL_H,
-                _ICON_W,
-                _ICON_H,
-                parent=group_id,
+                root, node.node.id, label(node.node), style, node.relative, parent=node.group_id
             )
-        y += height + 40
 
     for number, edge in enumerate(diagram.edges):
         cell = ET.SubElement(
@@ -116,16 +95,7 @@ def render(diagram: Diagram) -> str:
 
 
 def _vertex(
-    root: ET.Element,
-    cell_id: str,
-    value: str,
-    style: str,
-    x: int,
-    y: int,
-    width: int,
-    height: int,
-    *,
-    parent: str,
+    root: ET.Element, cell_id: str, value: str, style: str, box: Box, *, parent: str
 ) -> None:
     cell = ET.SubElement(
         root,
@@ -135,5 +105,11 @@ def _vertex(
     ET.SubElement(
         cell,
         "mxGeometry",
-        {"x": str(x), "y": str(y), "width": str(width), "height": str(height), "as": "geometry"},
+        {
+            "x": str(box.x),
+            "y": str(box.y),
+            "width": str(box.width),
+            "height": str(box.height),
+            "as": "geometry",
+        },
     )

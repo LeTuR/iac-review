@@ -5,29 +5,26 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="group-0" value="main.tf" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0078D4;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontColor=#0078D4;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="348" height="166" as="geometry"/>
+        <mxCell id="group-0" value="platform" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0078D4;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontColor=#0078D4;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="648" height="276" as="geometry"/>
         </mxCell>
         <mxCell id="n-azurerm_resource_group-platform" value="platform&lt;br&gt;azurerm_resource_group" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/general/Resource_Groups.svg" vertex="1" parent="group-0">
           <mxGeometry x="65" y="40" width="68" height="68" as="geometry"/>
         </mxCell>
+        <mxCell id="n-azurerm_storage_account-state" value="state&lt;br&gt;azurerm_storage_account" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/storage/Storage_Accounts.svg" vertex="1" parent="group-0">
+          <mxGeometry x="215" y="40" width="68" height="68" as="geometry"/>
+        </mxCell>
         <mxCell id="n-azurerm_storage_container-tfstate" value="tfstate&lt;br&gt;azurerm_storage_container" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#F5F5F5;strokeColor=#9E9E9E;fontColor=#616161;align=center;verticalAlign=middle;" vertex="1" parent="group-0">
-          <mxGeometry x="215" y="40" width="68" height="68" as="geometry"/>
-        </mxCell>
-        <mxCell id="group-1" value="platform" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0078D4;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontColor=#0078D4;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="40" y="246" width="648" height="166" as="geometry"/>
-        </mxCell>
-        <mxCell id="n-azurerm_storage_account-state" value="state&lt;br&gt;azurerm_storage_account" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/storage/Storage_Accounts.svg" vertex="1" parent="group-1">
-          <mxGeometry x="65" y="40" width="68" height="68" as="geometry"/>
-        </mxCell>
-        <mxCell id="n-azurerm_key_vault-platform" value="platform&lt;br&gt;azurerm_key_vault" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/security/Key_Vaults.svg" vertex="1" parent="group-1">
-          <mxGeometry x="215" y="40" width="68" height="68" as="geometry"/>
-        </mxCell>
-        <mxCell id="n-azurerm_virtual_network-hub" value="hub&lt;br&gt;azurerm_virtual_network" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/networking/Virtual_Networks.svg" vertex="1" parent="group-1">
           <mxGeometry x="365" y="40" width="68" height="68" as="geometry"/>
         </mxCell>
-        <mxCell id="n-azurerm_subnet-workload" value="workload&lt;br&gt;azurerm_subnet" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/networking/Subnet.svg" vertex="1" parent="group-1">
+        <mxCell id="n-azurerm_key_vault-platform" value="platform&lt;br&gt;azurerm_key_vault" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/security/Key_Vaults.svg" vertex="1" parent="group-0">
           <mxGeometry x="515" y="40" width="68" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-azurerm_virtual_network-hub" value="hub&lt;br&gt;azurerm_virtual_network" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/networking/Virtual_Networks.svg" vertex="1" parent="group-0">
+          <mxGeometry x="65" y="150" width="68" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="n-azurerm_subnet-workload" value="workload&lt;br&gt;azurerm_subnet" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;verticalLabelPosition=bottom;verticalAlign=top;labelBackgroundColor=none;image=img/lib/azure2/networking/Subnet.svg" vertex="1" parent="group-0">
+          <mxGeometry x="215" y="150" width="68" height="68" as="geometry"/>
         </mxCell>
         <mxCell id="edge-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="n-azurerm_storage_account-state" target="n-azurerm_resource_group-platform">
           <mxGeometry relative="1" as="geometry"/>

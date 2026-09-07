@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -286,7 +287,7 @@ def _home() -> int:
 
 def _review(cache: Cache, flags: dict[str, Any]) -> int:
     from iac_review import forges, providers
-    from iac_review.core.drawio import render
+    from iac_review.core.drawio import render as render_drawio
     from iac_review.core.review import review as run_review
     from iac_review.local import changeset_from_path
 
@@ -350,7 +351,14 @@ def _review(cache: Cache, flags: dict[str, Any]) -> int:
     if diagram_path:
         written = Path(diagram_path)
         written.parent.mkdir(parents=True, exist_ok=True)
-        written.write_text(render(result.diagram))
+        drawio_xml = render_drawio(result.diagram)
+        if written.name.endswith(".svg"):
+            from iac_review.core.svg import render as render_svg
+
+            written.write_text(render_svg(result.diagram, drawio_xml, result.icons))
+        else:
+            written.write_text(drawio_xml)
+        result = replace(result, diagram_path=_repo_relative(written))
 
     if flags.get("--post"):
         if forge is None:
@@ -683,6 +691,18 @@ def _command_help(command: str) -> str:
         )
     )
     return toon.document(*sections)
+
+
+def _repo_relative(path: Path) -> str | None:
+    """Path as a forge would address it, or ``None`` when it is outside the tree.
+
+    A forge can only display a file that lives in the repository, so a diagram
+    written to ``/tmp`` is deliberately not offered as one.
+    """
+    try:
+        return str(path.resolve().relative_to(Path.cwd().resolve()))
+    except ValueError:
+        return None
 
 
 def _executable() -> str:

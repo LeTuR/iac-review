@@ -31,6 +31,19 @@ To implement, using the GitLab REST API v4 with a ``GITLAB_TOKEN``:
 
 The normalized :class:`~iac_review.core.model.Finding` already carries everything
 both forges need: ``path``, ``line``, and :meth:`Finding.render` for the body.
+
+The diagram is the one place GitLab can do better than GitHub rather than the
+same. GitHub publishes no endpoint for attaching an image to a review comment,
+so the GitHub adapter can only link a diagram that is already committed. GitLab
+does publish one:
+
+    ``POST /projects/:id/uploads`` with ``multipart/form-data`` returns
+    ``{"url": "/uploads/<hash>/<name>", "markdown": "![name](/uploads/...)"}``
+
+so a GitLab adapter can upload the generated ``.drawio.svg`` and paste the
+returned ``markdown`` straight into the merge request note - the picture
+displays even when the file is not committed anywhere. Read the artifact from
+:attr:`~iac_review.core.model.ReviewResult.diagram_path`.
 """
 
 from __future__ import annotations

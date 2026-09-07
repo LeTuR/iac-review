@@ -76,10 +76,13 @@ class GitHubForge:
 
     name = "github"
 
+    RAW_ROOT = "https://raw.githubusercontent.com"
+
     def __init__(self, api_root: str = API_ROOT, auth: str | None = None) -> None:
         self._api_root = api_root.rstrip("/")
         self._auth = auth
         self._pull: PullRequest | None = None
+        self._head_sha = ""
 
     def fetch(self, target: str) -> Changeset:
         pull = parse_target(target)
@@ -87,6 +90,7 @@ class GitHubForge:
         base = f"/repos/{pull.owner}/{pull.repo}/pulls/{pull.number}"
         details = self._request("GET", base)
         head_sha = str(details.get("head", {}).get("sha", ""))
+        self._head_sha = head_sha
 
         files: list[ChangedFile] = []
         for entry in self._paged(f"{base}/files"):
@@ -136,11 +140,37 @@ class GitHubForge:
             else:
                 summary.append(finding.render())
 
-        body = _body(result, summary)
+        body = _body(result, summary, self._diagram_markdown(pull, result))
         self._request(
             "POST",
             f"/repos/{pull.owner}/{pull.repo}/pulls/{pull.number}/reviews",
             {"body": body, "event": "COMMENT", "comments": comments},
+        )
+
+    def _diagram_markdown(self, pull: PullRequest, result: ReviewResult) -> str:
+        """Show the diagram if GitHub can reach it, and say so plainly if it cannot.
+
+        GitHub publishes no API for attaching an image to a review comment - its
+        own OpenAPI description carries no such endpoint - so a generated file
+        cannot be uploaded. What does work is a raw URL to a file that exists in
+        the repository at the head commit, which raw.githubusercontent serves as
+        ``image/svg+xml``. So a diagram committed alongside the Terraform is
+        displayed inline; one merely written to disk is named instead of being
+        silently dropped.
+        """
+        path = result.diagram_path
+        if not path:
+            return ""
+        if self._head_sha and self._contents(pull, path, self._head_sha) is not None:
+            url = f"{self.RAW_ROOT}/{pull.owner}/{pull.repo}/{self._head_sha}/{path}"
+            return (
+                f'<img src="{url}" alt="Infrastructure diagram" width="100%">\n\n'
+                f"<sub>Open [`{path}`]({url}) in drawio to edit - "
+                f"the diagram source travels inside the image.</sub>"
+            )
+        return (
+            f"The diagram was written to `{path}`, which is not committed at this "
+            "commit, so it cannot be displayed here. Commit it to have it shown inline."
         )
 
     def _contents(self, pull: PullRequest, path: str, ref: str) -> str | None:
@@ -187,7 +217,7 @@ class GitHubForge:
         return collected
 
 
-def _body(result: ReviewResult, summary: list[str]) -> str:
+def _body(result: ReviewResult, summary: list[str], diagram: str = "") -> str:
     counts = {
         level: sum(1 for f in result.findings if f.severity == level)
         for level in ("error", "warning", "info")
@@ -195,6 +225,8 @@ def _body(result: ReviewResult, summary: list[str]) -> str:
     counted = ", ".join(f"{count} {level}" for level, count in counts.items() if count)
     headline = counted or "no findings"
     parts = [f"### `iac-review`\n\n{headline}."]
+    if diagram:
+        parts.append(diagram)
     if summary:
         parts.append("\n\n---\n\n".join(summary))
     if result.diagnostics:

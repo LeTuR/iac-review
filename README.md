@@ -50,7 +50,7 @@ $ uvx --from git+https://github.com/LeTuR/iac-review iac-review
 ## Try it
 
 ```console
-$ uv run iac-review review --path examples/fixture --diagram /tmp/platform.drawio
+$ uv run iac-review review --path examples/fixture --diagram /tmp/platform.drawio.svg
 review:
   source: examples/fixture
   origin: local
@@ -62,7 +62,7 @@ findings[4]{severity,location,rule,title}:
   warning,"main.tf:25",azure/avm-module-available,Use the AVM module for Key Vault
   warning,"main.tf:33",azure/avm-module-available,Use the AVM module for Virtual Network
 diagram:
-  path: /tmp/platform.drawio
+  path: /tmp/platform.drawio.svg
   nodes: 6
   edges: 6
   unmapped: 1
@@ -127,14 +127,64 @@ $ iac-review cache refresh --schema
 
 ## The diagram
 
-`--diagram` writes an uncompressed `.drawio` file that opens in drawio desktop
-and app.diagrams.net. Nodes use drawio's own Azure 2 shape library, resources
-are grouped by the resource group they reference, and edges follow the
+![Infrastructure diagram generated from examples/fixture](examples/output/platform.drawio.svg)
+
+That image is [`examples/output/platform.drawio.svg`](examples/output/platform.drawio.svg),
+generated from [`examples/fixture`](examples/fixture) and committed, so the output
+is reviewable rather than described. A test regenerates it and fails when it drifts.
+
+`--diagram` picks the format from the extension:
+
+| Extension | What you get |
+| --- | --- |
+| `.drawio.svg` | displays anywhere SVG renders **and** reopens in drawio for editing |
+| `.drawio` | the plain editable file, which renders nowhere |
+
+A `.drawio.svg` is one artifact doing both jobs. The drawio XML travels in the
+root element's `content` attribute — the same mechanism drawio uses for its own
+editable SVG export — so there is no image to keep in sync with a separate
+source file. A test asserts the committed `.svg` carries the committed `.drawio`
+byte for byte.
+
+Nodes use drawio's own Azure 2 shape library, embedded as data URIs so the file
+stands alone. Resources are grouped by the resource group they reference, a
+resource group heads its own box, and a resource that names none — a storage
+container, say — is pulled in beside the parent it hangs off. Edges follow the
 interpolations between resources.
 
-[`examples/output/platform.drawio`](examples/output/platform.drawio) is generated
-from [`examples/fixture`](examples/fixture) and committed, so the output is
-reviewable rather than described. A test regenerates it and fails when it drifts.
+### Why SVG, and why not shell out to drawio
+
+Both are deliberate, and both were checked rather than assumed.
+
+**SVG, not PNG.** The captain asked for `.drawio.png` and/or `.drawio.svg`. SVG
+alone is emitted: it scales, keeps text crisp, is a third the size, and renders
+in every place a PNG would. A PNG would need rasterising, and drawio's own CLI
+is [Electron 44](https://github.com/jgraph/drawio-desktop/blob/master/package.json) —
+a browser and a virtual display in CI, for no display benefit.
+
+**Emitted directly, not converted.** The renderer draws this tool's own model —
+labelled image nodes, dashed group boxes, arrows — so nothing about drawio's
+stencil engine is being reimplemented; the Azure shapes are SVG files placed as
+images, exactly as drawio places them. That is why hand-emitting is safe here
+and the Electron dependency is not the honest price.
+
+### Getting it in front of a reviewer
+
+A comment cannot reference a local file, so emitting the image is only half the
+job. The two forges differ, and this is a platform fact rather than a
+preference:
+
+- **GitHub** publishes no endpoint for attaching an image to a review comment —
+  its [OpenAPI description](https://github.com/github/rest-api-description)
+  carries none; the only asset upload is for releases. What does work is a raw
+  URL to a file committed at the head commit, which `raw.githubusercontent`
+  serves as `image/svg+xml`. So a diagram committed alongside the Terraform is
+  displayed inline in the review; one merely written to disk is named in the
+  body instead of being silently dropped.
+- **GitLab** does publish one: `POST /projects/:id/uploads` returns ready-made
+  `markdown`, so a GitLab adapter can upload the generated file and show it even
+  when nothing is committed. That is written up in
+  [`forges/gitlab.py`](src/iac_review/forges/gitlab.py).
 
 The icon mapping is data, not code:
 [`src/iac_review/providers/azure/data/icons.json`](src/iac_review/providers/azure/data/icons.json).

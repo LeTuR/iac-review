@@ -85,7 +85,7 @@ any checkout you already have on disk.
 | --- | --- |
 | `--full` | add a `details` array carrying each finding's detail, suggestion and references; the default list omits them |
 | `--format json` | JSON instead of TOON, when a downstream tool needs it |
-| `--diagram PATH` | write the `.drawio` file; omit it and no diagram is produced |
+| `--diagram PATH` | write the diagram; `.drawio.svg` displays anywhere and stays editable, `.drawio` is the plain file. Omit it and no diagram is produced |
 | `--fail-on error\|warning` | exit 1 when a finding at or above that severity exists |
 | `--offline` | never fetch; use the cache as-is |
 
@@ -133,17 +133,28 @@ resources drawn without an Azure icon.
 
 ## The diagram
 
-The `.drawio` file is uncompressed XML and opens in drawio desktop and
-app.diagrams.net. Icons come from drawio's own Azure shape library and are
-resolved by drawio itself, so the file needs no embedded assets. Resources are
-grouped by the resource group they reference; edges follow the interpolations
-between resources.
+Prefer `--diagram <name>.drawio.svg`. That one file both displays — in a
+browser, a file viewer, a pull request, a chat — and reopens in drawio for
+editing, because the diagram source travels inside the image. A plain
+`.drawio` renders nowhere, so only ask for it when something downstream needs
+the bare XML.
+
+Icons come from drawio's Azure shape library and are embedded in the file, so it
+stands alone. Resources are grouped by resource group; edges follow the
+interpolations between resources.
 
 A resource type with no icon mapped is drawn as a labelled generic shape and
-reported as a diagnostic — never dropped from the diagram. Point
-`IAC_REVIEW_AZURE_ICONS` at your own JSON file to override or extend the
-mapping. `iac-review icons audit` compares the mapping against the Azure library
-drawio ships today and lists anything renamed upstream.
+reported as a diagnostic — never dropped. Point `IAC_REVIEW_AZURE_ICONS` at your
+own JSON file to override or extend the mapping. `iac-review icons audit`
+compares the mapping against the Azure library drawio ships today.
+
+### Showing it to a reviewer
+
+On a pull request, a comment cannot reference a local file. If the diagram is
+committed in the repository at the head commit, `--post` displays it inline in
+the review. If it is only written to disk, the review body names the path
+instead. So when the point is to show someone the diagram, write it to a path
+inside the repository and commit it with the change.
 
 ## Limits
 

@@ -107,12 +107,26 @@ class Diagnostic:
     message: str
 
 
+@runtime_checkable
+class IconSource(Protocol):
+    """Supplies the bytes behind a :attr:`Node.icon` reference.
+
+    The core knows an icon by reference only. A provider that wants its icons
+    embedded in a standalone image supplies one of these; without it the diagram
+    still renders, with labelled generic shapes.
+    """
+
+    def read(self, reference: str) -> bytes | None:
+        """Icon file contents, or ``None`` when it cannot be resolved."""
+
+
 @dataclass(frozen=True, slots=True)
 class ProviderResult:
     findings: tuple[Finding, ...] = ()
     nodes: tuple[Node, ...] = ()
     edges: tuple[Edge, ...] = ()
     diagnostics: tuple[Diagnostic, ...] = ()
+    icons: IconSource | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +135,12 @@ class ReviewResult:
     findings: tuple[Finding, ...] = ()
     diagram: Diagram = field(default_factory=Diagram)
     diagnostics: tuple[Diagnostic, ...] = ()
+    icons: IconSource | None = None
+    diagram_path: str | None = None
+    """Repository-relative path of the rendered diagram, when one was written.
+
+    A forge adapter needs this to surface the picture; the core only fills it in.
+    """
 
     @property
     def worst(self) -> Severity | None:
