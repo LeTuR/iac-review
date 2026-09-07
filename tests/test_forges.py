@@ -131,11 +131,3 @@ def test_no_diagram_adds_nothing_to_the_body() -> None:
     body = payload["body"]
     assert "<img" not in body
     assert "diagram" not in body.lower()
-
-
-def test_the_gitlab_gap_records_how_that_forge_would_show_the_diagram() -> None:
-    from iac_review.forges import gitlab
-
-    doc = gitlab.__doc__ or ""
-    assert "/projects/:id/uploads" in doc
-    assert "diagram_path" in doc

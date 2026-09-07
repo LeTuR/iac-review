@@ -47,28 +47,50 @@ def _group_of(block: Block, references: set[str]) -> str:
 
 
 def _inherit_groups(nodes: list[Node], resources: list[Block]) -> list[Node]:
-    """Pull a resource into the group of whatever it hangs off.
+    """Pull a resource into the group of whatever it hangs off, transitively.
 
-    A storage container names no resource group - its storage account does. One
-    pass up the reference chain keeps such resources beside their parent instead
-    of stranding them in a file-named box.
+    A storage container names no resource group - its storage account does, and
+    that account may itself only inherit its group from further up the chain.
+    Declaration order in the file is irrelevant, so each resource walks its own
+    reference chain to a settled owner rather than relying on a single pass over
+    file order; a `visiting` set guards against a resource ever revisiting an
+    address still being resolved, so a self- or mutually-referencing pair can't
+    recurse forever.
     """
-    settled = {node.id: node.group for node in nodes}
+    node_by_id = {node.id: node for node in nodes}
     by_address = {block.address: block for block in resources}
-    for block in resources:
+    resolved: dict[str, str | None] = {}
+    visiting: set[str] = set()
+
+    def resolve(block: Block) -> str | None:
         node_id = _node_id(block.address)
-        if settled.get(node_id) != block.path:
-            continue
+        if node_id in resolved:
+            return resolved[node_id]
+        own_group = node_by_id[node_id].group
+        if node_id in visiting:
+            return own_group
+        if own_group != block.path:
+            resolved[node_id] = own_group
+            return own_group
+        visiting.add(node_id)
+        best: str | None = own_group
         for reference in sorted(_references(block)):
             parent = by_address.get(reference)
             if parent is None or parent.address == block.address:
                 continue
-            inherited = settled.get(_node_id(parent.address))
-            if inherited and inherited != parent.path:
-                settled[node_id] = inherited
+            inherited = resolve(parent)
+            if inherited != parent.path:
+                best = inherited
                 break
+        visiting.discard(node_id)
+        resolved[node_id] = best
+        return best
+
+    for block in resources:
+        resolve(block)
+
     return [
-        node if node.group == settled[node.id] else replace(node, group=settled[node.id])
+        node if node.group == resolved[node.id] else replace(node, group=resolved[node.id])
         for node in nodes
     ]
 

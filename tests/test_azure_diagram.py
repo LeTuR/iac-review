@@ -50,6 +50,41 @@ def test_a_resource_with_no_owner_falls_back_to_its_file(cache: Cache) -> None:
     assert _nodes(cache)["orphan"].group == "main.tf"  # type: ignore[attr-defined]
 
 
+SOURCE_OWNER_DECLARED_LAST = """resource "azurerm_storage_container" "tfstate" {
+  name               = "tfstate"
+  storage_account_id = azurerm_storage_account.state.id
+}
+
+resource "azurerm_storage_account" "state" {
+  name      = "stplatform"
+  subnet_id = azurerm_subnet.internal.id
+}
+
+resource "azurerm_subnet" "internal" {
+  name                 = "internal"
+  resource_group_name  = azurerm_resource_group.platform.name
+}
+
+resource "azurerm_resource_group" "platform" {
+  name     = "rg-platform"
+  location = "westeurope"
+}
+"""
+
+
+def test_a_child_resource_inherits_transitively_regardless_of_declaration_order(
+    cache: Cache,
+) -> None:
+    """The container is declared before the account, subnet and group it hangs off of."""
+    changeset = Changeset(
+        ref="t", files=(ChangedFile("main.tf", "modified", content=SOURCE_OWNER_DECLARED_LAST),)
+    )
+    nodes = {node.label: node for node in AzureProvider(cache).analyze(changeset).nodes}
+    assert nodes["tfstate"].group == "platform"
+    assert nodes["state"].group == "platform"
+    assert nodes["internal"].group == "platform"
+
+
 def test_icons_are_offered_so_a_standalone_image_can_embed_them(cache: Cache) -> None:
     changeset = Changeset(ref="t", files=(ChangedFile("main.tf", "modified", content=SOURCE),))
     result = AzureProvider(cache).analyze(changeset)
