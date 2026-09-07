@@ -1,0 +1,87 @@
+{
+ "azurerm_resource_group": {
+  "management_plane": {
+   "provider": "Microsoft.Resources",
+   "types": [
+    "subscriptions",
+    "resourceGroups"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups"
+   ]
+  }
+ },
+ "azurerm_storage_account": {
+  "management_plane": {
+   "scopes": [
+    "/subscriptions/resourceGroups"
+   ],
+   "provider": "Microsoft.Storage",
+   "types": [
+    "storageAccounts"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups/Microsoft.Storage/storageAccounts"
+   ]
+  }
+ },
+ "azurerm_storage_container": {
+  "management_plane": {
+   "scopes": [
+    "/subscriptions/resourceGroups"
+   ],
+   "provider": "Microsoft.Storage",
+   "types": [
+    "storageAccounts",
+    "blobServices",
+    "containers"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups/Microsoft.Storage/storageAccounts/blobServices/containers"
+   ]
+  }
+ },
+ "azurerm_key_vault": {
+  "management_plane": {
+   "scopes": [
+    "/subscriptions/resourceGroups"
+   ],
+   "provider": "Microsoft.KeyVault",
+   "types": [
+    "vaults"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups/Microsoft.KeyVault/vaults"
+   ]
+  }
+ },
+ "azurerm_virtual_network": {
+  "management_plane": {
+   "scopes": [
+    "/subscriptions/resourceGroups"
+   ],
+   "provider": "Microsoft.Network",
+   "types": [
+    "virtualNetworks"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups/Microsoft.Network/virtualNetworks"
+   ]
+  }
+ },
+ "azurerm_subnet": {
+  "management_plane": {
+   "scopes": [
+    "/subscriptions/resourceGroups"
+   ],
+   "provider": "Microsoft.Network",
+   "types": [
+    "virtualNetworks",
+    "subnets"
+   ],
+   "import_specs": [
+    "/subscriptions/resourceGroups/Microsoft.Network/virtualNetworks/subnets"
+   ]
+  }
+ }
+}
