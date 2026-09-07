@@ -57,7 +57,7 @@ _COMMANDS: dict[str, dict[str, str]] = {
 
 _EXAMPLES = {
     "review": [
-        "iac-review review --path infra --diagram infra.drawio",
+        "iac-review review --path infra --diagram infra.drawio.svg",
         "iac-review review --target owner/repo#7 --post --fail-on error",
         "iac-review review --path infra --full --format json",
     ],
@@ -263,7 +263,7 @@ def _home() -> int:
     if missing:
         help_lines.append("Run `iac-review cache refresh` to fetch the missing upstream data")
     help_lines.append(
-        "Run `iac-review review --path <dir> --diagram <file>.drawio` to review a directory"
+        "Run `iac-review review --path <dir> --diagram <file>.drawio.svg` to review a directory"
     )
     help_lines.append(
         "Run `iac-review review --target owner/repo#<n> --post` to review a pull request"
@@ -472,7 +472,7 @@ def _toon_review(result: ReviewResult, diagram: str | None, *, full: bool) -> st
     if result.findings and result.changeset.origin != "local":
         help_lines.append("Add `--post` to publish these findings as one review")
     if not diagram:
-        help_lines.append("Add `--diagram <file>.drawio` to draw the infrastructure")
+        help_lines.append("Add `--diagram <file>.drawio.svg` to draw the infrastructure")
     if any(d.source == "azure/schema" for d in result.diagnostics):
         help_lines.append(
             "Run `iac-review cache refresh --schema` to enable the provider schema rules"

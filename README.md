@@ -92,7 +92,7 @@ with worked examples.
 ```console
 $ iac-review review --pathh infra
 error: unknown flag --pathh for `review`
-help[2]: "valid flags for `review`: --cache, --diagram, --fail-on, ...",iac-review review --path infra --diagram infra.drawio
+help[2]: "valid flags for `review`: --cache, --diagram, --fail-on, ...",iac-review review --path infra --diagram infra.drawio.svg
 ```
 
 Exit codes: 0 success, 1 the run failed or `--fail-on` was met, 2 usage error.
