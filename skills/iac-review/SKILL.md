@@ -18,7 +18,7 @@ flowchart LR
   B --> D[diagram: Azure icons, grouped by resource group]
   C --> E[findings on changed lines]
   E --> F[post one review back]
-  D --> G[.drawio file]
+  D --> G[.drawio.svg file]
 ```
 
 ## Running it
@@ -58,7 +58,7 @@ Terraform under it. Empty: ask which.
 ## Reviewing a pull request
 
 ```console
-$ iac-review review --target owner/repo#7 --diagram /tmp/change.drawio
+$ iac-review review --target owner/repo#7 --diagram /tmp/change.drawio.svg
 ```
 
 Add `--post` to open one GitHub review: findings that land on a line the diff
@@ -73,7 +73,7 @@ message naming what it needs.
 ## Reviewing a directory
 
 ```console
-$ iac-review review --path infra --diagram infra.drawio
+$ iac-review review --path infra --diagram infra.drawio.svg
 ```
 
 No forge, no posting. This is the right form for a working tree, a fixture, or
@@ -103,7 +103,7 @@ findings[2]{severity,location,rule,title}:
   warning,"main.tf:10",azure/avm-module-available,Use the AVM module for Storage Account
   warning,"main.tf:25",azure/avm-module-available,Use the AVM module for Key Vault
 diagram:
-  path: infra.drawio
+  path: infra.drawio.svg
   nodes: 6
   edges: 6
   unmapped: 1
