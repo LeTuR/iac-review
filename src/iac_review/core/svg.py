@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import base64
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
 
 from iac_review.core.layout import Box, Layout, PlacedNode, place
 from iac_review.core.model import Diagram, IconSource
@@ -105,10 +104,8 @@ def render(diagram: Diagram, source: str, icons: IconSource | None = None) -> st
     for placed in layout.nodes:
         _node(svg, placed, icons)
 
-    raw = ET.tostring(svg, encoding="unicode")
-    pretty = minidom.parseString(raw).toprettyxml(indent="  ")
-    body = "\n".join(line for line in pretty.splitlines() if line.strip())
-    return body + "\n"
+    ET.indent(svg, space="  ")
+    return '<?xml version="1.0" ?>\n' + ET.tostring(svg, encoding="unicode") + "\n"
 
 
 def _defs(svg: ET.Element) -> None:
